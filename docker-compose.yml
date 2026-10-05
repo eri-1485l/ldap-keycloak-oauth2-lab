@@ -1,7 +1,11 @@
 services:
   openldap:
-    image: osixia/openldap:1.5.0
+    build: ./ldap
+    image: openldap-protected:latest
     container_name: openldap
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
     environment:
       LDAP_ORGANISATION: "Example Corp"
       LDAP_DOMAIN: "example.com"
@@ -50,30 +54,33 @@ services:
       KC_HTTP_PORT: 8080
       KC_HOSTNAME: http://localhost:8081
       KC_HOSTNAME_STRICT: "false"
+      KC_LOG: "console,file"
+      KC_LOG_FILE: /opt/keycloak/data/log/keycloak.log
     ports:
       - "8081:8080"
     volumes:
       - ./keycloak/import:/opt/keycloak/data/import:ro
+      - keycloak_logs:/opt/keycloak/data/log
     depends_on: [postgres, openldap]
     networks: [auth-network]
 
-  api:
-    build: ./fastapi
-    container_name: ldap-oauth-api
-    ports:
-      - "8000:8000"
-    environment:
-      KEYCLOAK_INTERNAL: http://keycloak:8080
-      KEYCLOAK_PUBLIC: http://localhost:8081
-      KEYCLOAK_REALM: cybersecurity
-      KEYCLOAK_CLIENT_ID: fastapi-api
-    depends_on: [keycloak]
-    networks: [auth-network]
+  keycloak-fail2ban:
+    build: ./keycloak-fail2ban
+    container_name: keycloak-fail2ban
+    network_mode: "service:keycloak"
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    volumes:
+      - keycloak_logs:/var/log/keycloak
+    depends_on:
+      - keycloak
 
 volumes:
   ldap_data:
   ldap_config:
   keycloak_db:
+  keycloak_logs:
 
 networks:
   auth-network:
