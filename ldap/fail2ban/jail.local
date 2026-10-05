@@ -1,0 +1,22 @@
+[DEFAULT]
+bantime = 7200
+findtime = 300
+maxretry = 3
+bantime.increment = true
+bantime.factor = 2
+bantime.maxtime = 1d
+ignoreip = 127.0.0.1/8 172.29.0.20 172.29.0.1
+
+# Desactivar el jail por defecto de sshd (no aplica en contenedores)
+[sshd]
+enabled = false
+
+[ldap-tls]
+enabled = true
+port = 636
+filter = ldap-auth
+logpath = /var/log/slapd/slapd.log
+maxretry = 3
+findtime = 300
+bantime = 7200
+action = iptables-allports[name=ldap-tls]
